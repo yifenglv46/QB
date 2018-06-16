@@ -347,7 +347,6 @@ function _askbbr() {
   echo
 }
 
-# package and repo addition (silently add php7) _add respo sources_ (12)
 function _repos() {
   apt-get install -y software-properties-common >>"${OUTTO}" 2>&1
   apt-get -y install lsb-release sudo >>"${OUTTO}" 2>&1
@@ -397,7 +396,7 @@ function _updates() {
 # package and repo addition (14) _install softwares and packages_
 function _depends() {
   if [[ $DISTRO == Debian ]]; then
-    apt-get -y install bc build-essential ed sudo screen zip irssi unzip bwm-ng htop nethogs speedtest-cli iotop \
+    apt-get -y install bc ed sudo screen zip irssi unzip bwm-ng htop nethogs speedtest-cli iotop \
                      dos2unix subversion dstat automake make libtool libcppunit-dev libssl-dev \
                      pkg-config libxml2-dev libcurl3 libcurl4-openssl-dev libsigc++-2.0-dev \
                      apache2-utils autoconf cron curl libapache2-mod-geoip \
@@ -412,7 +411,7 @@ function _depends() {
                      libjson-perl libjson-xs-perl libxml-libxslt-perl \
                      vnstat vnstati openvpn >>"${OUTTO}" 2>&1
   elif [[ $DISTRO == Ubuntu ]]; then
-    apt-get -y -f --allow-unauthenticated install build-essential debian-archive-keyring bc sudo \
+    apt-get -y -f --allow-unauthenticated install debian-archive-keyring bc sudo \
                      screen zip irssi unzip nano bwm-ng htop iotop git \
                      dos2unix subversion dstat automake make libtool libcppunit-dev libssl-dev \
                      pkg-config libxml2-dev libcurl3 libcurl4-openssl-dev libsigc++-2.0-dev \
@@ -428,6 +427,15 @@ function _depends() {
                      libjson-perl libjson-xs-perl libxml-libxslt-perl libapache2-mod-scgi \
                      vnstat vnstati openvpn >>"${OUTTO}" 2>&1
   fi
+  #install unrar from source
+  if [[ -d /root/tmp ]]; then rm -r tmp;fi
+  mkdir /root/tmp && cd /root/tmp
+  if [[ -d /root/tmp/unrar ]]; then rm -rf unrar;fi
+  cp -r ${local_setup}sources/unrarsrc-5.6.4.tar.gz .
+  tar -xvf unrarsrc-5.6.4.tar.gz >>"${OUTTO}" 2>&1
+  cd unrar
+  make >>"${OUTTO}" 2>&1
+  cp unrar /usr/bin >>"${OUTTO}" 2>&1
 }
 
 # build openssl from source to combat recent apt source updates
