@@ -47,7 +47,7 @@ function _intro() {
   echo
   echo "   ${title}              Heads Up!              ${normal} "
   echo "   ${message_title}  QuickBox works with the following  ${normal} "
-  echo "   ${message_title}  Ubuntu 15.10 | 16.04       ${normal} "
+  echo "   ${message_title}  Ubuntu 16.04 | Debian 9       ${normal} "
   echo
   echo
   echo "${green}Checking distribution ...${normal}"
@@ -58,11 +58,11 @@ function _intro() {
   fi
   echo "$(lsb_release -a)"
   echo
-  if [[ ! "$DISTRO" =~ ("Ubuntu") ]]; then
+  if [[ ! "$DISTRO" =~ ("Ubuntu"|"Debian") ]]; then
     echo "$DISTRO: ${alert} It looks like you are running $DISTRO, which is not supported by QuickBox ${normal} "
     echo 'Exiting...'
     exit 1
-  elif [[ ! "$CODENAME" =~ ("xenial"|"wily") ]]; then
+  elif [[ ! "$CODENAME" =~ ("xenial"|"stretch") ]]; then
     echo "Oh drats! You do not appear to be running a supported $DISTRO release."
     echo "${bold}$SETNAME${normal}"
     echo 'Exiting...'
@@ -79,34 +79,6 @@ function _checkroot() {
   fi
   echo "${green}Congrats! You're running as root. Let's continue${normal} ... "
   echo
-}
-
-function _checkkernel() {
-  grsec=$(uname -a | grep -i grs)
-  if [[ -n $grsec ]]; then
-    echo -e "Your server is currently running with kernel version: $(uname -r)"
-    echo -e "Kernels with ${bold}grsec${normal} are not supported"
-    echo -ne "${bold}${yellow}Would you like QuickBox to install the distribution kernel?${normal} (Default: ${green}${bold}Y${normal}) "; read input
-      case $input in
-        [yY] | [yY][Ee][Ss] | "" ) kernel=yes; echo "Your distribution's default kernel will be installed. A reboot will be ${bold}required${normal}."  ;;
-        [nN] | [nN][Oo] ) echo "Installer will not continue. Exiting ... "; exit 0 ;;
-      *) kernel=yes; echo "Your distribution's default kernel will be installed. A reboot will be ${bold}required${normal}."  ;;
-      esac
-      if [[ $kernel == yes ]]; then
-        if [[ $DISTRO == Ubuntu ]]; then
-          apt-get install -q -y linux-image-generic >>"${OUTTO}" 2>&1
-        elif [[ $DISTRO == Debian ]]; then
-          arch=$(uname -m)
-          if [[ $arch =~ ("i686"|"i386") ]]; then
-            apt-get install -q -y linux-image-686 >>"${OUTTO}" 2>&1
-          elif [[ $arch == x86_64 ]]; then
-            apt-get install -q -y linux-image-amd64 >>"${OUTTO}" 2>&1
-          fi
-        fi
-        mv /etc/grub.d/06_OVHkernel /etc/grub.d/25_OVHkernel
-        update-grub >>"${OUTTO}" 2>&1
-      fi
-  fi
 }
 
 # check if create log function (3)
@@ -379,17 +351,6 @@ function _askbbr() {
 function _repos() {
   apt-get install -y software-properties-common >>"${OUTTO}" 2>&1
   apt-get -y install lsb-release sudo >>"${OUTTO}" 2>&1
-  if [[ $DISTRO == Ubuntu ]]; then
-    LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php -y >>"${OUTTO}" 2>&1;
-  fi
-
-  if [[ $DISTRO == Debian ]]; then
-    echo "deb http://packages.dotdeb.org $(lsb_release -sc) all" > /etc/apt/sources.list.d/dotdeb-php7-$(lsb_release -sc).list
-    echo "deb-src http://packages.dotdeb.org $(lsb_release -sc) all" >> /etc/apt/sources.list.d/dotdeb-php7-$(lsb_release -sc).list
-    wget -q https://www.dotdeb.org/dotdeb.gpg
-    sudo apt-key add dotdeb.gpg >> /dev/null 2>&1
-  fi
-
 }
 
 # package and repo addition (13) _update and upgrade_
@@ -407,7 +368,6 @@ function _updates() {
     apt-get -y update >>"${OUTTO}" 2>&1
     apt-get -y -f install build-essential debian-archive-keyring \
                              python-software-properties >>"${OUTTO}" 2>&1
-    #apt-get -y -f --allow-unauthenticated install deb-multimedia-keyring >>"${OUTTO}" 2>&1
   fi
 
   if [[ $DISTRO == Debian ]]; then
@@ -425,8 +385,6 @@ function _updates() {
   if [[ -e /etc/ssh/sshd_config ]]; then
     echo "Port 4747" /etc/ssh/sshd_config >> /dev/null 2>&1
     sed -i 's/Port 22/Port 4747/g' /etc/ssh/sshd_config
-    #sed -i 's/SendEnv LANG LC_*/#SendEnv LANG LC_*/g' /etc/ssh/ssh_config
-    #sed -i 's/AcceptEnv LANG LC_*/#AcceptEnv LANG LC_*/g' /etc/ssh/sshd_config
     service ssh restart >>"${OUTTO}" 2>&1
   fi
 
@@ -439,31 +397,31 @@ function _updates() {
 # package and repo addition (14) _install softwares and packages_
 function _depends() {
   if [[ $DISTRO == Debian ]]; then
-    yes '' | apt-get install --force-yes fail2ban bc ed sudo screen zip irssi unzip nano bwm-ng htop nethogs speedtest.cli iotop \
-                     dos2unix subversion dstat automake make mktorrent libtool libcppunit-dev libssl-dev \
+    apt-get -y install bc build-essential ed sudo screen zip irssi unzip bwm-ng htop nethogs speedtest-cli iotop \
+                     dos2unix subversion dstat automake make libtool libcppunit-dev libssl-dev \
                      pkg-config libxml2-dev libcurl3 libcurl4-openssl-dev libsigc++-2.0-dev \
-                     apache2-utils autoconf cron curl libapache2-mod-fastcgi libapache2-mod-geoip \
-                     libxslt-dev libncurses5-dev yasm pcregrep apache2 php-net-socket libapache2-mod-php7.0 \
-                     php7.0-dev php7.0-geoip libgeoip-dev php7.0 php7.0-fpm php7.0-mbstring php7.0-mysql \
-                     php7.0-curl php7.0-memcached memcached php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache \
+                     apache2-utils autoconf cron curl libapache2-mod-geoip \
+                     libxslt-dev libncurses5-dev yasm pcregrep apache2 php-net-socket libapache2-mod-php7.0 libapache2-mod-scgi \
+                     php7.0-dev php-geoip libgeoip-dev php7.0 php7.0-fpm php7.0-mbstring php7.0-mysql \
+                     php7.0-curl php-memcached memcached php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache \
                      php7.0-xml python3-lxml python-lxml fontconfig comerr-dev ca-certificates libfontconfig1-dev \
-                     libdbd-mysql-perl libdbi-perl libfontconfig1 rar unrar mediainfo ifstat \
+                     libdbd-mysql-perl libdbi-perl libfontconfig1 mediainfo ifstat \
                      ttf-mscorefonts-installer checkinstall dtach cfv libarchive-zip-perl \
                      libnet-ssleay-perl ca-certificates-java libxslt1-dev \
                      libxslt1.1 libxml2 libffi-dev python-pip python-dev libhtml-parser-perl libxml-libxml-perl \
-                     libjson-perl libjson-xs-perl libxml-libxslt-perl libapache2-mod-scgi \
+                     libjson-perl libjson-xs-perl libxml-libxslt-perl \
                      vnstat vnstati openvpn >>"${OUTTO}" 2>&1
   elif [[ $DISTRO == Ubuntu ]]; then
-    apt-get -y -f --allow-unauthenticated install build-essential debian-archive-keyring fail2ban bc sudo \
+    apt-get -y -f --allow-unauthenticated install build-essential debian-archive-keyring bc sudo \
                      screen zip irssi unzip nano bwm-ng htop iotop git \
-                     dos2unix subversion dstat automake make mktorrent libtool libcppunit-dev libssl-dev \
+                     dos2unix subversion dstat automake make libtool libcppunit-dev libssl-dev \
                      pkg-config libxml2-dev libcurl3 libcurl4-openssl-dev libsigc++-2.0-dev \
                      apache2-utils autoconf cron curl libapache2-mod-fastcgi libapache2-mod-geoip \
                      libxslt-dev libncurses5-dev yasm pcregrep apache2 php-net-socket \
                      libdbd-mysql-perl libdbi-perl php7.0 php7.0-fpm php7.0-mbstring php7.0-mysql \
                      php7.0-curl php-memcached memcached php7.0-gd php7.0-json php7.0-mcrypt php7.0-opcache \
                      php7.0-xml php7.0-zip fontconfig comerr-dev ca-certificates libfontconfig1-dev \
-                     php7.0-geoip libfontconfig1 rar unrar mediainfo ifstat libapache2-mod-php7.0 \
+                     php7.0-geoip libfontconfig1 mediainfo ifstat libapache2-mod-php7.0 \
                      python3-lxml python-lxml ttf-mscorefonts-installer checkinstall dtach cfv libarchive-zip-perl \
                      libnet-ssleay-perl openjdk-8-jre-headless openjdk-8-jre openjdk-8-jdk libxslt1-dev \
                      libxslt1.1 libxml2 libffi-dev python-pip python-dev libhtml-parser-perl libxml-libxml-perl \
@@ -476,14 +434,13 @@ function _depends() {
 function _openssl() {
   MAXCPUS=$(echo "$(nproc) / 2"|bc)
   cd /root
-  wget -q https://www.openssl.org/source/openssl-1.0.2l.tar.gz
-  tar -zxvf openssl-1.0.2l.tar.gz >>"${OUTTO}" 2>&1
-  cd openssl-1.0.2l
+  wget -q https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+  tar -zxvf openssl-1.0.2o.tar.gz >>"${OUTTO}" 2>&1
+  cd openssl-1.0.2o
   ./config -fPIC >>"${OUTTO}" 2>&1;
   make -j${MAXCPUS} >>"${OUTTO}" 2>&1;
-  #make install >>"${OUTTO}" 2>&1;
   cd /root
-  rm -rf openssl-1.0.2l.tar.gz
+  rm -rf openssl-1.0.2o.tar.gz
   cd
 }
 
@@ -499,11 +456,6 @@ function _skel() {
   if [[ -d /etc/skel ]]; then rm -r /etc/skel;fi
   mkdir /etc/skel
   cp -r ${local_setup}templates/skel/. /etc/skel
-  tar xzf ${local_setup}sources/rarlinux-x64-5.3.0.tar.gz -C ./
-  cp ./rar/*rar /usr/bin
-  cp ./rar/*rar /usr/sbin
-  rm -rf rarlinux*.tar.gz
-  rm -rf ./rar
   wget -q http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
   gunzip GeoLiteCity.dat.gz>>"${OUTTO}" 2>&1
   mkdir -p /usr/share/GeoIP>>"${OUTTO}" 2>&1
@@ -575,7 +527,7 @@ function _ffmpeg() {
     if [[ $DISTRO == Ubuntu ]]; then
       apt-get -y install x265 >>"${OUTTO}" 2>&1
     elif [[ $DISTRO == Debian ]]; then
-      apt-get -y install -t jessie-backports x265 >>"${OUTTO}" 2>&1
+      apt-get -y install -t stretch-backports x265 >>"${OUTTO}" 2>&1
     fi
     mkdir /root/tmp
     cd /root/tmp
@@ -636,12 +588,11 @@ function _xmlrpc() {
   if [[ -d /root/tmp ]]; then rm -r tmp;fi
   mkdir /root/tmp && cd /root/tmp
   if [[ -d /root/tmp/xmlrpc-c ]]; then rm -rf xmlrpc-c;fi
-  cp -r ${local_setup}sources/xmlrpc-c_1-33-12/ .
-  cd xmlrpc-c_1-33-12
-  chmod +x configure
+  cp -r ${local_setup}sources/xmlrpc-c-1.39.12.tgz .
+  tar -xvf xmlrpc-c-1.39.12.tgz >>"${OUTTO}" 2>&1
+  cd xmlrpc-c-1.39.12
   ./configure --prefix=/usr --disable-cplusplus >>"${OUTTO}" 2>&1
   make >>"${OUTTO}" 2>&1
-  chmod +x install-sh
   make install >>"${OUTTO}" 2>&1
 }
 
@@ -661,9 +612,9 @@ function _libtorrent() {
   if [ $LTORRENT = 0.13.4 ]; then
   cp ${local_setup}sources/libtorrent-0.13.4-tar.patch .
   patch -p1 < libtorrent-*-tar.patch >>"${OUTTO}" 2>&1
-  ./configure --prefix=/usr OPENSSL_LIBS="-L/root/openssl-1.0.2l -lssl -lcrypto" OPENSSL_CFLAGS="-I/root/openssl-1.0.2l/include" --enable-ipv6 >>"${OUTTO}" 2>&1
+  ./configure --prefix=/usr OPENSSL_LIBS="-L/root/openssl-1.0.2o -lssl -lcrypto" OPENSSL_CFLAGS="-I/root/openssl-1.0.2o/include" --enable-ipv6 >>"${OUTTO}" 2>&1
   else
-  ./configure --prefix=/usr OPENSSL_LIBS="-L/root/openssl-1.0.2l -lssl -lcrypto" OPENSSL_CFLAGS="-I/root/openssl-1.0.2l/include" >>"${OUTTO}" 2>&1
+  ./configure --prefix=/usr OPENSSL_LIBS="-L/root/openssl-1.0.2o -lssl -lcrypto" OPENSSL_CFLAGS="-I/root/openssl-1.0.2o/include" >>"${OUTTO}" 2>&1
   fi
   make -j${MAXCPUS} >>"${OUTTO}" 2>&1
   make install >>"${OUTTO}" 2>&1
@@ -928,16 +879,7 @@ EOF
 
 # mktorrent function (xx)
 function _mktorrent() {
-  if [[ -d /root/tmp ]]; then rm -r tmp;fi
-  mkdir /root/tmp && cd /root/tmp
-  mktorrent_version=1.1
-  wget --quiet https://github.com/Rudde/mktorrent/archive/v$mktorrent_version.zip -O mktorrent.zip  >>"${OUTTO}" 2>&1
-  unzip -o mktorrent.zip  >>"${OUTTO}" 2>&1
-  cd mktorrent-1.1
-  make >>"${OUTTO}" 2>&1
-  make install >>"${OUTTO}" 2>&1
-  cd ..
-  rm -rf mktorrent-1.1 && rm -f mktorrent.zip
+apt-get -y install mktorrent >>"${OUTTO}" 2>&1
 }
 
 # function to install rutorrent (22)
@@ -1084,11 +1026,7 @@ function _plugins() {
   rm -rf ${rutorrent}plugins/tracklabels/labels/nlb.png
 
   # Needed for fileupload
-  # wget http://ftp.nl.debian.org/debian/pool/main/p/plowshare/plowshare4_2.1.3-1_all.deb -O plowshare4.deb >>"${OUTTO}" 2>&1
-  # wget http://ftp.nl.debian.org/debian/pool/main/p/plowshare/plowshare_2.1.3-1_all.deb -O plowshare.deb >>"${OUTTO}" 2>&1
   apt-get -y install plowshare >>"${OUTTO}" 2>&1
-  dpkg -i plowshare*.deb >>"${OUTTO}" 2>&1
-  rm -rf plowshare*.deb >>"${OUTTO}" 2>&1
   cd /root
   mkdir -p /root/bin
   git clone https://github.com/mcrapet/plowshare.git ~/.plowshare-source >>"${OUTTO}" 2>&1
@@ -1110,17 +1048,11 @@ function _plugins() {
 function _autodl() {
   mkdir -p "/home/${username}/.irssi/scripts/autorun/" >>"${OUTTO}" 2>&1
   cd "/home/${username}/.irssi/scripts/"
-  # Grab the most recent version of AutoDL-trackers
-  #curl -sL https://api.github.com/repos/autodl-community/autodl-trackers/releases/latest | grep -Po '(?<="browser_download_url": ")(.*-v[\d.]+.zip)' | xargs wget --quiet -O autodl-trackers.zip
-  #cd AutodlIrssi
-  #rm -rf trackers
-  #unzip /home/${username}/.irssi/scripts/autodl-trackers.zip -d /home/${username}/.irssi/scripts/AutodlIrssi/trackers
   # Grab the most recent version of AutoDL
   curl -sL http://git.io/vlcND | grep -Po '(?<="browser_download_url": ")(.*-v[\d.]+.zip)' | xargs wget --quiet -O autodl-irssi.zip
   unzip -o autodl-irssi.zip >>"${OUTTO}" 2>&1
   #cd "/home/${username}/.irssi/scripts/"
   rm autodl-irssi.zip
-  #&& rm autodl-trackers.zip
   cp autodl-irssi.pl autorun/
   mkdir -p "/home/${username}/.autodl" >>"${OUTTO}" 2>&1
   touch "/home/${username}/.autodl/autodl.cfg"
@@ -1145,16 +1077,6 @@ function _makedirs() {
   usermod -a -G www-data "${username}" >>"${OUTTO}" 2>&1
   usermod -a -G "${username}" www-data >>"${OUTTO}" 2>&1
 }
-
-# function to make crontab .statup file (29)
-#function _cronfile() {
-#  cp ${local_setup}templates/startup.template /home/${username}/.startup
-#  chmod 775 /home/${username}/.startup
-#  if [[ $DELUGE != NO ]]; then
-#  sed -i 's/DELUGEWEB_CLIENT=no/DELUGEWEB_CLIENT=yes/g' /home/${username}/.startup
-#  sed -i 's/DELUGED_CLIENT=no/DELUGED_CLIENT=yes/g' /home/${username}/.startup
-#fi
-#}
 
 # function to configure first user config.php (30)
 function _ruconf() {
@@ -1370,7 +1292,7 @@ cat >/root/information.info<<EOF
   https://${username}:${passwd}@${ip} (Also works for FTP:5757/SSH:4747)
 EOF
   rm -rf "$0" >>"${OUTTO}" 2>&1
-    for i in ssh apache2 php7.0-fpm vsftpd fail2ban quota memcached cron; do
+    for i in ssh apache2 php7.0-fpm vsftpd quota memcached cron; do
       service $i restart >>"${OUTTO}" 2>&1
       systemctl enable $i >>"${OUTTO}" 2>&1
     done
@@ -1431,7 +1353,6 @@ _bashrc
 _intro
 _checkroot
 _logcheck
-_checkkernel
 _hostname
 _askquota
 _askcontinue
@@ -1475,7 +1396,6 @@ _apachesudo
 echo -n "Installing xmlrpc-c-${green}1.33.12${normal} ... ";_xmlrpc & spinner $!;echo
 echo -n "Installing libtorrent-${green}$LTORRENT${normal} ... ";_libtorrent & spinner $!;echo
 echo -n "Installing rtorrent-${green}$RTVERSION${normal} ... ";_rtorrent & spinner $!;echo
-#echo -n "Installing rtorrent ... ";_rtorrent_fallback & spinner $!;echo
 echo -n "Installing rutorrent into /srv ... ";_rutorrent & spinner $!;echo
 echo -n "Installing rutorrent plugins ... ";_rutorrent-plugins & spinner $!;echo
 echo -n "Installing deluge ... ";_deluge & spinner $!;echo
