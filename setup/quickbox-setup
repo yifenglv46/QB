@@ -440,14 +440,18 @@ function _depends() {
                      vnstat vnstati openvpn >>"${OUTTO}" 2>&1
   fi
   #install unrar from source
-  if [[ -d /root/tmp ]]; then rm -r tmp;fi
-  mkdir /root/tmp && cd /root/tmp
-  if [[ -d /root/tmp/unrar ]]; then rm -rf unrar;fi
-  cp -r ${local_setup}sources/unrarsrc-5.6.4.tar.gz .
-  tar -xvf unrarsrc-5.6.4.tar.gz >>"${OUTTO}" 2>&1
-  cd unrar
-  make >>"${OUTTO}" 2>&1
-  cp unrar /usr/bin >>"${OUTTO}" 2>&1
+  if [[$arch == armv7l ]]; then
+    if [[ -d /root/tmp ]]; then rm -r tmp;fi
+    mkdir /root/tmp && cd /root/tmp
+    if [[ -d /root/tmp/unrar ]]; then rm -rf unrar;fi
+    cp -r ${local_setup}sources/unrarsrc-5.6.4.tar.gz .
+    tar -xvf unrarsrc-5.6.4.tar.gz >>"${OUTTO}" 2>&1
+    cd unrar
+    make >>"${OUTTO}" 2>&1
+    cp unrar /usr/bin >>"${OUTTO}" 2>&1
+  else
+    apt-get -y install rar unrar >>"${OUTTO}" 2>&1
+  fi
 }
 
 # build openssl from source to combat recent apt source updates
