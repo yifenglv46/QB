@@ -1,0 +1,21 @@
+#------------------------------------------------------------------------------#
+#                            OFFICIAL UBUNTU REPOS                             #
+#------------------------------------------------------------------------------#
+
+###### Ubuntu Main Repos
+deb http://ports.ubuntu.com/ubuntu-ports RELEASE main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports RELEASE main restricted universe multiverse
+
+###### Ubuntu Update Repos
+deb http://ports.ubuntu.com/ubuntu-ports RELEASE-security main restricted universe multiverse
+deb http://ports.ubuntu.com/ubuntu-ports RELEASE-updates main restricted universe multiverse
+deb http://ports.ubuntu.com/ubuntu-ports RELEASE-proposed main restricted universe multiverse
+deb http://ports.ubuntu.com/ubuntu-ports RELEASE-backports main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports RELEASE-security main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports RELEASE-updates main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports RELEASE-proposed main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports RELEASE-backports main restricted universe multiverse
+
+###### Ubuntu Partner Repo (probably will fail)
+deb http://archive.canonical.com/ubuntu RELEASE partner
+deb-src http://archive.canonical.com/ubuntu RELEASE partner
