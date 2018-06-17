@@ -441,7 +441,7 @@ function _depends() {
   fi
   #install unrar from source
   arch=$(uname -m)
-  if [[$arch == armv7l ]]; then
+  if [[ $arch == armv7l ]]; then
     if [[ -d /root/tmp ]]; then rm -r tmp;fi
     mkdir /root/tmp && cd /root/tmp
     if [[ -d /root/tmp/unrar ]]; then rm -rf unrar;fi
